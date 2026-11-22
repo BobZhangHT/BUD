@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import t
 
-BASE = ROOT/"results/rerun_1000_20261122"
+BASE = ROOT/"results/rerun_1000"
 SENTINELS = {"val_pc1": "new-confirmation", "val_multivariate": "new-confirmation",
              "val_null": "new-confirmation", "saddle3d": "legacy"}
 METHODS = ["SRS", "PC1-X", "BUD-fullspace-onepass"]

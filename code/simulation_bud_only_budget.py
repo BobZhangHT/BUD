@@ -15,7 +15,7 @@ import numpy as np
 
 
 ROOT = base.ROOT
-PREVIOUS_PLAN = ROOT / "results/budget_optimization_20261122/simulation_plan.json"
+PREVIOUS_PLAN = ROOT / "results/budget_optimization/simulation_plan.json"
 
 
 def pilot_variances(task):

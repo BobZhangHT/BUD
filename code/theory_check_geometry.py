@@ -26,7 +26,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats import qmc
 
 
-SEED = 202611220731
+SEED = 0x2f2c91e0fb
 REPS = 1000
 ABS_TOL = 1e-9
 REL_TOL = 1e-9

@@ -1,5 +1,4 @@
 {
-  "date": "2026-11-21",
   "final_candidate": "BUD-fullspace-onepass",
   "initial_design": "BUD-inverse2",
   "decision": "One full-standardized-X centroid reassignment, exactly one pass. No outcome-adaptive selection, no additional tuning parameter. Selected for deterministic scatter descent and improved worst-case oracle IF variance in development2.",

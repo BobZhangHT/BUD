@@ -272,7 +272,7 @@ def build_parser() -> argparse.ArgumentParser:
     simulation.add_argument("--m-group", type=int, default=120)
     real = commands.add_parser("nwts-flc", help="Original NWTS and FLC evaluation")
     _common(real, default_replicates=1000)
-    real.add_argument("--seed", type=int, default=2026112201)
+    real.add_argument("--seed", type=int, default=0x78c404c9)
     real.add_argument("--tau", type=float, default=1825.0)
     fixed = commands.add_parser("fixed-grid", help="Optional fixed-grid simulation")
     fixed.add_argument("--out", type=Path, required=True)
@@ -318,7 +318,7 @@ def main() -> None:
         "gbsg-mgus2-small": [CODE / "small_budget_application.py"],
         "gbsg-mgus2-medium": [CODE / "small_budget_application.py", CODE / "medium_real_application.py"],
         "gbsg-planning": [CODE / "small_budget_application.py",
-                          PROJECT / "results/budget_planning_20261122/gbsg_external_calibration.json"],
+                          PROJECT / "results/budget_planning/gbsg_external_calibration.json"],
         "colon-small": [CODE / "colon_small_budget.py", CODE / "small_budget_application.py"],
         "colon-medium": [CODE / "colon_small_budget.py", CODE / "medium_real_application.py"],
     }[args.command]

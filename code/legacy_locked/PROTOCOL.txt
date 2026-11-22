@@ -1,5 +1,4 @@
 BUD optimisation study: protocol before new simulation results
-Date: 2026-11-21 (Asia/Shanghai)
 
 Goal and scope
 -------------

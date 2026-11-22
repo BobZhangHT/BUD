@@ -14,7 +14,7 @@ from scipy.stats import norm
 
 
 ROOT = Path(__file__).resolve().parents[1]
-STUDY = ROOT / "results/theory_validation_20261122"
+STUDY = ROOT / "results/theory_validation"
 FIGURE_NAMES = ("theory_geometry.pdf", "theory_bootstrap.pdf", "theory_budget.pdf")
 BLUE, GREEN, ORANGE = "#2166ac", "#11766c", "#a5520d"
 GRAY, GRID = "#58636d", "#e7ebef"

@@ -1,4 +1,4 @@
-# Numerical versions used for the November 2026 paper reproduction.
+# Pinned numerical dependencies for the paper reproduction.
 numpy==2.4.6
 scipy==1.16.3
 pandas==2.3.3

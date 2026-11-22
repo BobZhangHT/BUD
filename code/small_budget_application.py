@@ -18,7 +18,7 @@ import pandas as pd
 from scipy.stats import norm
 
 REVISION = "cc03c29690889dbe83089f5206e2422db8c3f71f"
-BASE_SEED, DRAWS, RESAMPLES, MC_DRAWS = 2026112203, 2000, 499, 4000
+BASE_SEED, DRAWS, RESAMPLES, MC_DRAWS = 0x78c404cb, 2000, 499, 4000
 BUDGETS = (40, 80)
 COHORTS = {
     "gbsg": dict(n=686, id="pid", time="rfstime", event="status", tau=1825,
@@ -184,7 +184,7 @@ def run(out):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=Path("results/small_budgets_20261122"))
+    parser.add_argument("--out", type=Path, default=Path("results/small_budgets"))
     out = ROOT / parser.parse_args().out
     out.mkdir(parents=True, exist_ok=False)
     try:

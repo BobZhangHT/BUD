@@ -9,7 +9,7 @@ import sys
 from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "results" / "rerun_1000_20261122"
+OUTPUT = ROOT / "results" / "rerun_1000"
 LOCKED = ROOT / "code" / "legacy_locked"
 
 

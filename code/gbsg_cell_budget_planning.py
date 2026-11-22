@@ -19,13 +19,13 @@ import pandas as pd
 
 
 ROOT = driver.ROOT
-DEFAULT_OUT = ROOT / "results/budget_optimization_20261122"
+DEFAULT_OUT = ROOT / "results/budget_optimization"
 GBSG = driver.COHORTS["gbsg"]
 STRATIFIED = ("BUD", "PC1-X")
 METHODS = ("SRS", *STRATIFIED)
 FEATURES = ("age", "meno", "nodes", "pgr", "er")
 LOG_FEATURES = ("nodes", "pgr", "er")
-FOLDS, FOLD_SEED = 5, 2026112227
+FOLDS, FOLD_SEED = 5, 0x78c404e3
 DRAWS, RESAMPLES, MC_DRAWS = 1000, 1000, 4000
 HALF_WIDTH, EMPTY_LIMIT = 90, 0.01
 Z = NormalDist().inv_cdf(0.975)

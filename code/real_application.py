@@ -208,7 +208,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--replicates', type=int, default=1000)
     p.add_argument('--bootstrap-replicates', type=int, default=499)
-    p.add_argument('--seed', type=int, default=2026112201)
+    p.add_argument('--seed', type=int, default=0x78c404c9)
     p.add_argument('--tau', type=float, default=1825.)
     p.add_argument('--workers', type=int, default=2)
     p.add_argument('--out', default='results/real_application')

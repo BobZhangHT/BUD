@@ -13,7 +13,7 @@ import pandas as pd
 from analyze_simulations import BUD, COMPACT_LABELS, ROOT, SCENES, write_grouped_table
 
 
-INPUT = ROOT / "results/budget_refresh_20261122"
+INPUT = ROOT / "results/budget_refresh"
 METHODS = {BUD: ("BUD", "#2166ac", "o"),
            "PC1-X": ("PC1-X", "#a5520d", "^"),
            "SRS": ("SRS", "#535d68", "s")}

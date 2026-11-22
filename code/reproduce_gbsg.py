@@ -131,11 +131,11 @@ def run(backend: str, workers: int, quick: bool) -> None:
 
     jobs = [
         _subprocess_grid((40, 80), 2000, 1000, backend,
-                         ROOT / "results" / "budget_refresh_20261122" / "small_budgets"),
+                         ROOT / "results" / "budget_refresh" / "small_budgets"),
         _subprocess_grid((120, 240), 1000, 1000, backend,
-                         ROOT / "results" / "budget_refresh_20261122" / "medium_gbsg"),
+                         ROOT / "results" / "budget_refresh" / "medium_gbsg"),
         _subprocess_grid((160, 200), 1000, 1000, backend,
-                         ROOT / "results" / "bud_budget_20261122" / "gbsg_grid_160_200"),
+                         ROOT / "results" / "bud_budget" / "gbsg_grid_160_200"),
     ]
     # Preserve the three published grid shapes. Rotterdam is an external,
     # checksum-pinned planning pilot here, not a retrospective evaluation.

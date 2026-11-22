@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 
-OUT = ROOT / "results/bud_budget_20261122/gbsg"
+OUT = ROOT / "results/bud_budget/gbsg"
 PLAN_PROTOCOL = "gbsg_plan_protocol.json"
 PLAN_LOCK = "gbsg_plan_lock.json"
 SNAPSHOT = "gbsg_plan_covariates.csv"

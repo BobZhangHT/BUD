@@ -24,7 +24,7 @@ sys.path.insert(0, str(LOCKED))
 from refinement import refined_design
 from survival import km_if, km_rmst
 
-SEED = 2026112206
+SEED = 0x78c404ce
 GRID = np.array([1., 2., 3.])
 TAU = 4.
 WIDTH = np.diff(np.r_[GRID, TAU])

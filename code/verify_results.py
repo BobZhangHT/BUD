@@ -40,7 +40,8 @@ def extract(root, check):
         value = values
         for field in fields:
             value = value[field]
-        selected.append(value)
+        # Seeds are represented as hex in the reference so comparison is exact.
+        selected.append(hex(value) if fields == ["seed"] else value)
     return selected
 
 

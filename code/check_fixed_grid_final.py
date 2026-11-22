@@ -29,7 +29,7 @@ from survival import draw_sample, km_rmst, km_if, bootstrap_rmst
 ROOT = Path(__file__).resolve().parent / 'legacy_locked'
 PROJECT = Path(__file__).resolve().parents[1]
 OUT = PROJECT / 'results' / 'fixed_grid_final_reproduction'
-SEED = 2026112201
+SEED = 0x78c404c9
 SIZES = [(480,60),(960,120),(1920,240)]
 COHORTS = 32
 DRAWS = 20
@@ -54,7 +54,7 @@ def grid_functional(time_obs,event,weights,tau=TAU,dt=DT):
 
 
 def protocol():
-    return dict(purpose='Frozen final-BUD fixed-grid mechanism check, no method selection; written before outcomes on 2026-11-22',
+    return dict(purpose='Frozen final-BUD fixed-grid mechanism check, no method selection; specified before outcomes',
                 scope='Fixed J=12 observed-time grid; exact coarsened-cohort KM RMST',
                 scenario='dev_additive',method='BUD-fullspace-onepass',
                 sizes=[dict(n_group=n,m_group=m,H=m//2,k=16,s=2) for n,m in SIZES],

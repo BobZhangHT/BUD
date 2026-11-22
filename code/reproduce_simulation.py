@@ -8,9 +8,9 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REFRESH = ROOT / "results/budget_refresh_20261122"
-COMMON = ROOT / "results/budget_optimization_20261122"
-BUD_ONLY = ROOT / "results/bud_budget_20261122"
+REFRESH = ROOT / "results/budget_refresh"
+COMMON = ROOT / "results/budget_optimization"
+BUD_ONLY = ROOT / "results/bud_budget"
 
 
 def script(name, *args):

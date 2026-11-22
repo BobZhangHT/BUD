@@ -24,7 +24,7 @@ HALF_WIDTH = .15
 EMPTY = .01
 Z = NormalDist().inv_cdf(.975)
 ROOT = engine.PROJECT
-BASE_PLAN = ROOT / "results/budget_refresh_20261122/simulation_budget_plan.json"
+BASE_PLAN = ROOT / "results/budget_refresh/simulation_budget_plan.json"
 
 
 def cell_sizes(n, h):

@@ -1,6 +1,6 @@
 # Balanced uniform-design subsampling for restricted mean survival time
 
-Reproduction code for *Balanced uniform-design subsampling and bootstrap inference for restricted mean survival time*, by Hengtao Zhang, Yuanke Qu, and Xiaoya Xu. This repository corresponds to the November 22, 2026 manuscript. It regenerates the numerical results and figures for the main paper and its supplement.
+Reproduction code for *Balanced uniform-design subsampling and bootstrap inference for restricted mean survival time*, by Hengtao Zhang, Yuanke Qu, and Xiaoya Xu. It regenerates the numerical results and figures for the main paper and its supplement.
 
 BUD constructs strata using phase-I covariates, then samples two records independently without replacement within each stratum. The paper compares BUD with simple random sampling (SRS) and stratification on the first principal component of phase-I covariates (PC1-X). The target is the complete-cohort Kaplan–Meier restricted mean survival time (KM–RMST) or the difference between two complete-cohort KM–RMSTs.
 
@@ -25,7 +25,7 @@ The default backend compiles the included C sources with GCC or Clang and caches
 
 The smoke profile uses reduced replication counts and writes to `smoke_results/`. Full runs use the published counts, with 1,000 bootstrap resamples per draw in the main simulation and GBSG application. Experimental stages run in separate processes to preserve their original design imports, random-number streams, and source provenance. Use a fresh checkout for a repeat run with a different backend. For a selectable workload, add `--target simulation`, `--target gbsg`, or `--target supplement`. The full supplement target reuses the 120-per-group draws from the simulation target. Each full target checks its outputs against `reference_results.json`. To repeat the checks without rerunning the experiments, use `python reproduce.py verify`.
 
-The anchor sensitivity stage generates 12,000 cohorts and can take substantially longer than the other supplement checks. It saves completed chunks as it runs. To resume that stage alone with the same backend, use `python code/refresh_secondary.py anchors --root results/budget_refresh_20261122 --workers 8`, then run `python reproduce.py verify --target supplement`.
+The anchor sensitivity stage generates 12,000 cohorts and can take substantially longer than the other supplement checks. It saves completed chunks as it runs. To resume that stage alone with the same backend, use `python code/refresh_secondary.py anchors --root results/budget_refresh --workers 8`, then run `python reproduce.py verify --target supplement`.
 
 ## Data and code
 
@@ -40,10 +40,10 @@ No application CSVs are shipped. The GBSG and Rotterdam datasets are downloaded 
 
 | Paper material | Regenerated results |
 | --- | --- |
-| Main simulation and Supplementary Section S9 | In `results/budget_refresh_20261122/`, `results/budget_optimization_20261122/`, and `results/bud_budget_20261122/`, find the pilot plans, four three-method summary tables, and the main two-budget figure `figures/simulation_bud_budgets.pdf` under the last directory. |
-| GBSG and Supplementary Section S10 | Read `summary.csv` and `paired.csv` under `results/budget_refresh_20261122/small_budgets/` (40, 80), `results/budget_refresh_20261122/medium_gbsg/` (120, 240), `results/bud_budget_20261122/gbsg/evaluation/` (136), and `results/bud_budget_20261122/gbsg_grid_160_200/` (160, 200). The 136-patient planning record and frozen partitions are in the parent `gbsg/` directory. |
-| Supplementary Section S11 | `results/theory_validation_20261122/` contains the geometry, fixed-grid bootstrap, and sample-size checks. The three PDFs in `figures/` use the settings shown in the supplement. |
-| Supplementary Section S12 | `results/budget_refresh_20261122/` contains the budget-sensitivity, fixed-grid Weibull, and anchor-sensitivity summaries. |
+| Main simulation and Supplementary Section S9 | In `results/budget_refresh/`, `results/budget_optimization/`, and `results/bud_budget/`, find the pilot plans, four three-method summary tables, and the main two-budget figure `figures/simulation_bud_budgets.pdf` under the last directory. |
+| GBSG and Supplementary Section S10 | Read `summary.csv` and `paired.csv` under `results/budget_refresh/small_budgets/` (40, 80), `results/budget_refresh/medium_gbsg/` (120, 240), `results/bud_budget/gbsg/evaluation/` (136), and `results/bud_budget/gbsg_grid_160_200/` (160, 200). The 136-patient planning record and frozen partitions are in the parent `gbsg/` directory. |
+| Supplementary Section S11 | `results/theory_validation/` contains the geometry, fixed-grid bootstrap, and sample-size checks. The three PDFs in `figures/` use the settings shown in the supplement. |
+| Supplementary Section S12 | `results/budget_refresh/` contains the budget-sensitivity, fixed-grid Weibull, and anchor-sensitivity summaries. |
 
 The verifier checks selected numerical cells, interval endpoints, scenario sizes, and the source of reported plots. It uses relative tolerance `2e-9` and absolute tolerance `1e-11` for floating-point comparisons. Generated TeX tables are checked after normalizing line endings. Figure PDFs are checked as rendered files since their binary metadata can differ across builds. Raw draws, plots, local data, and compiled libraries are excluded from version control.
 
