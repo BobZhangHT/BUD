@@ -128,7 +128,7 @@ def summarize(raw):
 
 
 def run(out):
-    files = [Path(__file__), ROOT/"handoff/SMALL_BUDGET_PROTOCOL.md", ROOT/"code/real_application.py",
+    files = [Path(__file__), ROOT/"code/real_application.py",
              ROOT/"code/real_core/designs.py", ROOT/"code/real_core/survival.py",
              ROOT/"code/validate_real_application.py"]
     provenance = {

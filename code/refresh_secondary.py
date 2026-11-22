@@ -50,8 +50,7 @@ def main():
         from design_backend import native_metadata
         backend_metadata.update(native_metadata())
     files = [Path(__file__), Path(driver.__file__), Path(bud_experiment.__file__),
-             bud_experiment.CODE / "design_backend.py", bud_experiment.CODE / "paired_sample_backend.py",
-             bud_experiment.PROJECT / "handoff/BUD_REFRESH_PROTOCOL.md"]
+             bud_experiment.CODE / "design_backend.py", bud_experiment.CODE / "paired_sample_backend.py"]
     record = dict(backend=backend_metadata,
                   sha256={p.relative_to(bud_experiment.PROJECT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                   for p in files}, workers=args.workers)

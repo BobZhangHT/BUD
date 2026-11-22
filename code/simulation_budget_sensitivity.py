@@ -24,7 +24,7 @@ METHODS = ["SRS", "PC1-X", "BUD-fullspace-onepass"]
 def main():
     out = BASE/"simulation_budget_sensitivity"
     out.mkdir(parents=True, exist_ok=False)
-    paths = [Path(__file__), ROOT/"handoff/SIMULATION_BUDGET_SENSITIVITY_PROTOCOL.md", *LOCKED.rglob("*.py")]
+    paths = [Path(__file__), *LOCKED.rglob("*.py")]
     protocol = dict(base_seed=33891027, n_group=960, budgets=[60, 120, 240], cohorts=50, draws=20,
                     B=1000, sentinels=SENTINELS, methods=METHODS, original_input="confirmation/raw.csv",
                     sha256={p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()

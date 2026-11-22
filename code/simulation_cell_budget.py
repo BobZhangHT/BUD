@@ -24,7 +24,6 @@ HALF_WIDTH = .15
 EMPTY = .01
 Z = NormalDist().inv_cdf(.975)
 ROOT = engine.PROJECT
-PROTOCOL = ROOT / "handoff/CELL_BUDGET_OPTIMIZATION.md"
 BASE_PLAN = ROOT / "results/budget_refresh_20261122/simulation_budget_plan.json"
 
 
@@ -184,7 +183,7 @@ def plan(path, backend, workers):
                   half_width_target=HALF_WIDTH, empty_probability_target=EMPTY,
                   n_group=N, pilot_seed=SEED, pilot_cohorts=COHORTS, candidates=examined,
                   sha256={p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-                          for p in (Path(__file__), PROTOCOL, BASE_PLAN, *engine.LEGACY.glob("*.py"))})
+                          for p in (Path(__file__), BASE_PLAN, *engine.LEGACY.glob("*.py"))})
     with path.open("x", encoding="utf8") as file:
         json.dump(report, file, indent=2)
     print("Selected simulation budget:", chosen, examined[-1]["limiting"], flush=True)
@@ -199,7 +198,7 @@ def evaluate(plan_path, out, backend_kind, workers):
     backend = engine._new_backend(backend_kind)
     engine._worker_initializer = initialize
     out = engine._prepare_out(out, "simulation-cell-budget", args, backend,
-                              [Path(__file__), PROTOCOL, plan_path.resolve(),
+                              [Path(__file__), plan_path.resolve(),
                                engine.LEGACY / "run_confirmation.py"])
     started = perf_counter()
     engine.run_simulation(args, backend, out)

@@ -82,8 +82,6 @@ def run(backend: str, workers: int, quick: bool) -> None:
 
     confirmation = refresh_root / "confirmation" / "raw.csv"
     _require(confirmation, "primary confirmation raw output for S12 budget sensitivity")
-    _require(ROOT / "handoff" / "SIMULATION_BUDGET_SENSITIVITY_PROTOCOL.md",
-             "S12 budget-sensitivity protocol")
     _require(CODE / "refresh_secondary.py", "S12 budget-sensitivity refresh driver")
     _run("code/refresh_secondary.py", "sensitivity", "--root", str(refresh_root),
          "--workers", str(workers), "--backend", backend)

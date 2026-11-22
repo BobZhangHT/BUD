@@ -23,7 +23,6 @@ from typing import Any
 CODE = Path(__file__).resolve().parent
 PROJECT = CODE.parent
 LEGACY = CODE / "legacy_locked"
-RERUN_PROTOCOL = PROJECT / "handoff" / "RERUN_1000_PROTOCOL.md"
 
 # Set only in spawned workers by _worker_initializer.
 _WORKER_MODULE: Any = None
@@ -115,7 +114,7 @@ def _prepare_out(out: Path, command: str, args: argparse.Namespace, backend: Any
         "workers": args.workers,
         "source_sha256": {
             path.relative_to(PROJECT).as_posix(): _sha256(path)
-            for path in [Path(__file__), RERUN_PROTOCOL, *runner_files, CODE / "km_backend.py",
+            for path in [Path(__file__), *runner_files, CODE / "km_backend.py",
                          CODE / "design_backend.py", CODE / "paired_sample_backend.py"]
             if path.exists()
         },
@@ -318,7 +317,7 @@ def main() -> None:
         "rotterdam": [CODE / "rotterdam_application.py"],
         "gbsg-mgus2-small": [CODE / "small_budget_application.py"],
         "gbsg-mgus2-medium": [CODE / "small_budget_application.py", CODE / "medium_real_application.py"],
-        "gbsg-planning": [CODE / "small_budget_application.py", PROJECT / "handoff/BUD_REFRESH_PROTOCOL.md",
+        "gbsg-planning": [CODE / "small_budget_application.py",
                           PROJECT / "results/budget_planning_20261122/gbsg_external_calibration.json"],
         "colon-small": [CODE / "colon_small_budget.py", CODE / "small_budget_application.py"],
         "colon-medium": [CODE / "colon_small_budget.py", CODE / "medium_real_application.py"],

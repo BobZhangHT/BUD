@@ -11,7 +11,7 @@ import platform
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REFERENCE = ROOT / "reference_results.json"
+REFERENCE = Path(__file__).with_name("reference_results.json")
 # Tight enough to catch a changed draw or reported rounded value, while tolerating
 # harmless floating-point differences between supported compiler/BLAS builds.
 RTOL = 2e-9

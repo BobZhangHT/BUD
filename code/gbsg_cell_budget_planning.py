@@ -35,7 +35,6 @@ SOURCE_FILES = (
     "code/real_core/designs.py", "code/real_core/survival.py",
     "code/validate_real_application.py", "code/km_backend.py",
     "code/native/weighted_km.c", "code/legacy_locked/survival.py",
-    "handoff/SMALL_BUDGET_PROTOCOL.md",
 )
 
 

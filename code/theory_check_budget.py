@@ -189,11 +189,10 @@ def main(output):
         discrepancy = group["empty"] - group["exact_empty"]
         entry["empty_discrepancy_mcse"] = float(discrepancy.std(ddof=1) / sqrt(len(group)))
         summary.append(entry)
-    protocol = ROOT/"handoff/THEORY_VALIDATION_PROTOCOL.md"
     report = dict(target=TARGET, beta=BETA, n=N, pilot_n=PILOT_N, B=BOOTSTRAP, seed=SEED,
                   budget_candidates=BUDGETS, exact_checks=enumerate_small(), projections=projections,
-                  summary=summary, source_sha256={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                                                for p in [Path(__file__).resolve(), protocol]})
+                  summary=summary, source_sha256={Path(__file__).resolve().relative_to(ROOT).as_posix():
+                                 hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     data.to_csv(output/"budget_draws.csv.gz", index=False)
     blocks.to_csv(output/"budget_cohorts.csv", index=False)
     (output/"budget.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")

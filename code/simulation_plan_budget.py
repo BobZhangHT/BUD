@@ -57,8 +57,7 @@ def main(output):
         candidates.append(dict(m=m, k=k, max_half_width=max_width, max_empty_probability=max_empty,
                                passes=max_width <= .15 and max_empty <= .01, projections=projections))
     selected = next((row["m"] for row in candidates if row["passes"]), None)
-    sources = [Path(__file__), bud_experiment.PROJECT/"handoff/BUD_REFRESH_PROTOCOL.md",
-               *bud_experiment.LEGACY.rglob("*.py")]
+    sources = [Path(__file__), *bud_experiment.LEGACY.rglob("*.py")]
     result = dict(selected_m=selected, half_width_target=.15, empty_probability_target=.01,
                   pilot_cohorts=COHORTS, pilot_seed=SEED, n_group=N, pilot_inputs=inputs,
                   candidates=candidates,

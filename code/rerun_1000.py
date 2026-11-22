@@ -10,7 +10,6 @@ from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "results" / "rerun_1000_20261122"
-PROTOCOL = ROOT / "handoff" / "RERUN_1000_PROTOCOL.md"
 LOCKED = ROOT / "code" / "legacy_locked"
 
 
@@ -19,9 +18,7 @@ def sha(path):
 
 
 def provenance(study):
-    return {"count_protocol": PROTOCOL.relative_to(ROOT).as_posix(),
-            "count_protocol_sha256": sha(PROTOCOL),
-            "driver_sha256": sha(Path(__file__)),
+    return {"driver_sha256": sha(Path(__file__)),
             "original_study_sha256": sha(Path(study.__file__))}
 
 

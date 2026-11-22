@@ -15,7 +15,6 @@ import numpy as np
 
 
 ROOT = base.ROOT
-PROTOCOL = ROOT / "handoff/BUD_ONLY_BUDGET_PROTOCOL.md"
 PREVIOUS_PLAN = ROOT / "results/budget_optimization_20261122/simulation_plan.json"
 
 
@@ -113,7 +112,7 @@ def plan(path, backend, workers):
                   backend=backend, half_width_target=base.HALF_WIDTH, empty_probability_target=base.EMPTY,
                   evaluated={m: row for m, row in candidates.items() if m <= chosen},
                   sha256={p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-                          for p in (Path(__file__), Path(base.__file__), PROTOCOL, PREVIOUS_PLAN, base.BASE_PLAN)})
+                          for p in (Path(__file__), Path(base.__file__), PREVIOUS_PLAN, base.BASE_PLAN)})
     with path.open("x", encoding="utf8") as file:
         json.dump(report, file, indent=2)
     win = candidates[chosen]

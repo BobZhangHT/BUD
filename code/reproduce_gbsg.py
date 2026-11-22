@@ -83,8 +83,7 @@ def _grid(budgets: tuple[int, ...], replicates: int, bootstrap_replicates: int,
     prepared = engine._prepare_out(
         out, args.command, args, selected_backend,
         [Path(__file__), Path(study.__file__), engine.CODE / "real_application.py",
-         engine.CODE / "real_core" / "designs.py", engine.CODE / "real_core" / "survival.py",
-         engine.PROJECT / "handoff" / "SMALL_BUDGET_PROTOCOL.md"],
+         engine.CODE / "real_core" / "designs.py", engine.CODE / "real_core" / "survival.py"],
     )
     study.BUDGETS = budgets
     study.DRAWS, study.RESAMPLES = replicates, bootstrap_replicates
