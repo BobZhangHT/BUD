@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "Please cite this software and the accompanying manuscript."
+type: software
+title: "Balanced uniform-design subsampling and bootstrap inference for restricted mean survival time"
+authors:
+  - family-names: Zhang
+    given-names: Hengtao
+  - family-names: Qu
+    given-names: Yuanke
+  - family-names: Xu
+    given-names: Xiaoya
+version: "2026.11.22"

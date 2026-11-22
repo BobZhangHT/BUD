@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-21",
+  "final_candidate": "BUD-fullspace-onepass",
+  "initial_design": "BUD-inverse2",
+  "decision": "One full-standardized-X centroid reassignment, exactly one pass. No outcome-adaptive selection, no additional tuning parameter. Selected for deterministic scatter descent and improved worst-case oracle IF variance in development2.",
+  "confirmation_seed": 33891027,
+  "cohorts_per_scenario": 64,
+  "draws_per_cohort": 20,
+  "bootstrap_replicates": 499,
+  "N_per_group": 960,
+  "m_per_group": 120,
+  "primary_interval": "basic percentile-of-centered-design-bootstrap errors",
+  "same_information_benchmarks": [
+    "SRS",
+    "PC1-X",
+    "KMEANS-X",
+    "BALANCED-KMEANS-X2"
+  ],
+  "diagnostic_extra_information_benchmark": "MVRS-PROXY on four legacy scenarios only",
+  "reference_candidate": "BUD-inverse2",
+  "competitive_threshold_rmse_ratio": 1.05,
+  "validation_scope": "New independent cohorts and new Monte Carlo seeds. Scenario families previously examined and reused; this is not unseen-family validation.",
+  "no_further_tuning_from_confirmation": true,
+  "source_sha256": {
+    "designs.py": "21d6c8b131e05c399c9ab45f9e628f2005008148f8d175c77b159acd3faa7e55",
+    "refinement.py": "d664fb91f33b19448881abae4e4613bf558b664ff4479ea5b92174902d988e54",
+    "survival.py": "081d12b8d0242b6db0e42b2f278aace559e2a6046dad57f6bbded9fc234fb6f8",
+    "scenarios.py": "042f406bf6c32073b2faa464a3e79b0b0ab7fe9aa1a5f425a422942b1f5f3c80",
+    "run_confirmation.py": "907b2f13886d140f049c2bd9a08bf51708603106eb55be8fdfe0629392edbc00"
+  }
+}

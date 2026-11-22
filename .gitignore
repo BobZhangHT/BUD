@@ -1,0 +1,12 @@
+/.venv/
+/data/
+/results/
+/smoke_results/
+/figures/
+__pycache__/
+*.py[cod]
+*.dll
+*.dylib
+*.so
+*.log
+.DS_Store

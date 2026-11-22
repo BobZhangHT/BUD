@@ -1,0 +1,2 @@
+# Keep checked-in source bytes consistent across Windows and Unix checkouts.
+* -text

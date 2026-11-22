@@ -1,0 +1,76 @@
+BUD optimisation study: protocol before new simulation results
+Date: 2026-11-21 (Asia/Shanghai)
+
+Goal and scope
+-------------
+Keep equal-capacity uniform-design strata, independent SRS without replacement,
+and a stratum-preserving, finite-population corrected nonparametric bootstrap.
+No candidate may read expensive outcomes, oracle influence scores, or the
+data-generating risk function. Selection of UD anchors uses mixture discrepancy
+only. Method development across prespecified simulation settings is distinct
+from choosing a design using a cohort's observed outcomes.
+
+Primary estimand
+----------------
+The complete finite cohort's difference in Kaplan-Meier restricted mean
+survival times, integral from 0 to tau=3.0, evaluated at exact event times.
+This is a design-conditional validation target. Coverage is not interpreted as
+coverage for a superpopulation RMST contrast. Existing fixed-grid bootstrap
+theory is retained; continuous-time simulations provide additional numerical
+evidence, not a proof of a functional bootstrap theorem.
+
+Development
+-----------
+Four generator settings: dev_pc1, dev_additive, dev_banana, dev_crossing.
+N=640 per group, m=80 per group. 16 independent complete cohorts and 30 repeated
+phase-II samples per cohort. Initial screening uses B=0, comparing point RMSE
+and the exact design variance of the complete-cohort influence linearisation.
+The latter is solely a post-design diagnostic.
+Candidates: equal-rank BUD with 4 or 2 samples per cell; inverse-quantile BUD
+in unwhitened PC coordinates with 4 or 2; one balanced Lloyd update; PC1 slabs
+followed by four-cell conditional UD. PCA retains 85% variance throughout.
+
+Benchmarks and information
+--------------------------
+SRS; PC1-X with 2 and 4 observations/cell; K-means on every standardized raw X
+column, no PCA, target H=m/4 and capped proportional allocation with >=2/cell.
+Fine K-means and balanced full-X K-means can be checked as stronger diagnostic
+benchmarks. PC1-X is explicitly not called the MVRS paper's algorithm.
+The previous project's predicted-influence-process PC1 baseline is retained
+in a separate historical-scenario check using the previous data generator.
+It receives model-derived information unavailable to primary X-only methods.
+It may not be relabelled as a raw-X PC1 comparator.
+
+Selection and validation
+------------------------
+Select one primary candidate using development diagnostics and complexity.
+Prefer the simpler method when geometric-mean standard-error ratios differ
+by <=2%; avoid a method with large regret in the PC1-friendly setting.
+Lock its exact specification and source hashes before examining validation.
+The eight validation DGPs, fixed in scenarios.py, cover PC1-alignment,
+multivariate/interactions, reference banana, saddle, disconnected mixture,
+irrelevant coordinates, low-variance discarded signal, and a null signal.
+No DGP or coefficient is altered after observing validation rankings.
+Main validation: N=960 per group, m=120 per group; 24 independent complete
+cohorts, 40 phase-II draws per cohort, B=399 replicates per draw.
+Seeds disjoint from development. All failed or adverse scenarios retained.
+
+Performance and Monte Carlo uncertainty
+--------------------------------------
+Report RMSE, bias, basic-bootstrap 95% coverage and mean interval length;
+also normal intervals using the same bootstrap SD as a prespecified check.
+No CI variant is chosen after looking at validation coverage.
+Competitive means point RMSE <=1.05 times the smallest comparator RMSE,
+subject to coverage scrutiny. Report the full ratio, not just wins.
+Use paired per-unit random priorities for legal SRSWOR sampling across methods.
+The Monte Carlo cluster is the complete cohort; use cohort-level uncertainty
+for paired MSE differences and for coverage. Do not count all nested samples
+as independent evidence about performance across DGP-generated cohorts.
+
+Honesty conditions
+------------------
+No universal optimality claim follows from UD or equal cell size.
+An outcome-aligned scalar score can beat every outcome-free geometric design.
+If superiority disappears against balanced K-means or random anchors, explain
+that the gain is attributable to balance/locality and do not claim a UD-specific
+advantage. Large-N scalability of exact Hungarian matching is not established.
