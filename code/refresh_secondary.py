@@ -25,6 +25,8 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--workers", type=int, required=True)
     parser.add_argument("--backend", choices=("c", "python"), default="c")
+    parser.add_argument("--reference-raw", type=Path,
+                        help="Archived 50-by-20 120-per-group raw output required by sensitivity.")
     args = parser.parse_args()
     output = args.root.resolve()
     if args.study == "anchors":
@@ -36,9 +38,11 @@ def main():
         out = output / "anchor_ablation"
     else:
         import simulation_budget_sensitivity as driver
-        if not (output / "confirmation" / "raw.csv").is_file():
-            parser.error("Sensitivity needs the refreshed confirmation raw.csv")
+        reference_raw = (args.reference_raw or output / "confirmation" / "raw.csv").resolve()
+        if not reference_raw.is_file():
+            parser.error("Sensitivity needs the archived 50-by-20 reference raw.csv")
         driver.BASE = output
+        driver.REFERENCE_RAW = reference_raw
         def pool(max_workers):
             return ProcessPoolExecutor(max_workers=args.workers, initializer=initialize,
                                        initargs=("run_confirmation", args.backend))

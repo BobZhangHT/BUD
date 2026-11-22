@@ -16,6 +16,7 @@ import numpy as np
 from scipy.stats import t
 
 BASE = ROOT/"results/rerun_1000"
+REFERENCE_RAW = BASE/"confirmation"/"raw.csv"
 SENTINELS = {"val_pc1": "new-confirmation", "val_multivariate": "new-confirmation",
              "val_null": "new-confirmation", "saddle3d": "legacy"}
 METHODS = ["SRS", "PC1-X", "BUD-fullspace-onepass"]
@@ -25,8 +26,10 @@ def main():
     out = BASE/"simulation_budget_sensitivity"
     out.mkdir(parents=True, exist_ok=False)
     paths = [Path(__file__), *LOCKED.rglob("*.py")]
+    input_path = REFERENCE_RAW.relative_to(ROOT) if REFERENCE_RAW.is_relative_to(ROOT) else REFERENCE_RAW
     protocol = dict(base_seed=33891027, n_group=960, budgets=[60, 120, 240], cohorts=50, draws=20,
-                    B=1000, sentinels=SENTINELS, methods=METHODS, original_input="confirmation/raw.csv",
+                    B=1000, sentinels=SENTINELS, methods=METHODS,
+                    original_input=input_path.as_posix(),
                     sha256={p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                             for p in paths})
     (out/"protocol.json").write_text(json.dumps(protocol, indent=2))
@@ -48,7 +51,7 @@ def main():
             frame.to_csv(out/f"raw_{budget}_{scene}_{cohort:03d}.csv.gz", index=False)
             if done % 50 == 0:
                 print(f"Budget sensitivity {done}/{len(futures)}", flush=True)
-    reference = pd.read_csv(BASE/"confirmation"/"raw.csv")
+    reference = pd.read_csv(REFERENCE_RAW)
     reference = reference[reference.scene.isin(SENTINELS)].assign(m=120)
     full = pd.concat([reference, *more], ignore_index=True)
     full = full.sort_values(["scene", "m", "cohort", "draw", "method"])

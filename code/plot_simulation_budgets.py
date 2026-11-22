@@ -17,7 +17,7 @@ INPUT = ROOT / "results/budget_refresh"
 METHODS = {BUD: ("BUD", "#2166ac", "o"),
            "PC1-X": ("PC1-X", "#a5520d", "^"),
            "SRS": ("SRS", "#535d68", "s")}
-def plot(output, planned_summary, planned_budget):
+def plot(output, planned_summary, planned_budget, reference_summary=INPUT / "paper_simulation"):
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9,
                          "axes.spines.right": False, "axes.spines.top": False,
                          "pdf.fonttype": 42})
@@ -36,7 +36,7 @@ def plot(output, planned_summary, planned_budget):
             capsize=1.35, zorder=3)
         bounds[panel].extend([float(np.min(lower)), float(np.max(upper))])
 
-    for budget, base, offset in ((120, INPUT / "paper_simulation", -.23),
+    for budget, base, offset in ((120, reference_summary, -.23),
                                 (planned_budget, planned_summary, .23)):
         summary = pd.read_csv(base / "simulation_summary.csv").set_index(["method", "scene"])
         ratios = pd.read_csv(base / "plot_ratios.csv").set_index(["method", "metric", "scene"]).sort_index()
@@ -86,15 +86,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=INPUT / "figures/simulation_budgets.pdf")
     parser.add_argument("--planned-summary", type=Path, default=INPUT / "paper_planned")
+    parser.add_argument("--reference-summary", type=Path, default=INPUT / "paper_simulation")
     parser.add_argument("--planned-budget", type=int, default=384)
     parser.add_argument("--planned-table", type=Path, help="Write the displayed planned-budget results.")
     parser.add_argument("--reference-table", type=Path, help="Write all three methods' 120-per-group results.")
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    plot(args.out, args.planned_summary, args.planned_budget)
+    plot(args.out, args.planned_summary, args.planned_budget, args.reference_summary)
     if args.planned_table:
         summary = pd.read_csv(args.planned_summary / "simulation_summary.csv")
         write_grouped_table(summary, args.planned_table)
     if args.reference_table:
-        summary = pd.read_csv(INPUT / "paper_simulation/simulation_summary.csv")
+        summary = pd.read_csv(args.reference_summary / "simulation_summary.csv")
         write_grouped_table(summary, args.reference_table)

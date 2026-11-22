@@ -189,11 +189,11 @@ def plan(path, backend, workers):
     print("Selected simulation budget:", chosen, examined[-1]["limiting"], flush=True)
 
 
-def evaluate(plan_path, out, backend_kind, workers):
+def evaluate(plan_path, out, backend_kind, workers, *, cohorts=50, draws=20, bootstrap_replicates=1000):
     selection = json.loads(plan_path.read_bytes())
     m = selection["selected_m"]
-    args = argparse.Namespace(out=out, command="simulation", cohorts=50, draws=20,
-                              bootstrap_replicates=1000, n_group=N, m_group=m,
+    args = argparse.Namespace(out=out, command="simulation", cohorts=cohorts, draws=draws,
+                              bootstrap_replicates=bootstrap_replicates, n_group=N, m_group=m,
                               workers=workers, seed=33891027, backend=backend_kind)
     backend = engine._new_backend(backend_kind)
     engine._worker_initializer = initialize

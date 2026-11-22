@@ -55,10 +55,6 @@ def main():
         if args.workers < 1:
             parser.error("--workers must be at least 1")
         targets = TARGETS if args.target == "all" else (args.target,)
-        if args.command == "run" and args.target == "supplement":
-            raw120 = ROOT / "results/budget_refresh/confirmation/raw.csv"
-            if not raw120.is_file():
-                parser.error("Run --target simulation first. The supplement reuses its 120-per-group draws.")
         for target in targets:
             options = ["--quick"] if args.command == "smoke" else []
             call(f"reproduce_{target}", "--backend", args.backend, "--workers", args.workers, *options)

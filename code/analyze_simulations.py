@@ -2,7 +2,7 @@
 """Reproduce the three-method manuscript analysis from archived raw results.
 
 The independent Monte Carlo unit is a complete cohort, not an individual
-phase-II draw. All 20 draws remain together in each uncertainty calculation.
+phase-II draw. All draws from the same cohort stay together in each uncertainty calculation.
 This is a post-lock reanalysis of a broader recorded experiment.
 """
 from pathlib import Path
@@ -64,9 +64,12 @@ def main():
     parser.add_argument('--out',type=Path,default=Path('results'),help='Analysis output folder, relative to the project root or absolute.')
     parser.add_argument('--figures',type=Path,default=Path('figures'),help='Figure output folder, relative to the project root or absolute.')
     parser.add_argument('--cohorts', type=int, default=64, help='Expected independent cohorts per scenario.')
+    parser.add_argument('--draws', type=int, default=20, help='Expected phase-II draws per cohort.')
     parser.add_argument('--planned-table', action='store_true',
                         help='Also write the grouped table of all three methods at the planned budget.')
     args=parser.parse_args()
+    if args.cohorts < 2 or args.draws < 1:
+        parser.error('At least two cohorts and one draw per cohort are required.')
     source=ROOT/args.confirmation
     def input_csv(stem):
         for suffix in ('.csv','.csv.gz'):
@@ -77,9 +80,12 @@ def main():
     rawall=input_csv('raw')
     raw=rawall[rawall.method.isin(METHODS)].copy()
     raw['squared_error']=raw.error**2
-    assert len(raw)==12*args.cohorts*20*3 and not raw.duplicated(['scene','cohort','draw','method']).any()
-    assert raw.groupby(['scene','method']).size().eq(args.cohorts*20).all()
-    assert raw.groupby(['scene','cohort','method']).size().eq(20).all()
+    assert set(raw.scene) == set(SCENES)
+    assert len(raw)==len(SCENES)*args.cohorts*args.draws*len(METHODS)
+    assert not raw.duplicated(['scene','cohort','draw','method']).any()
+    assert raw.groupby(['scene','method']).cohort.nunique().eq(args.cohorts).all()
+    assert raw.groupby(['scene','cohort','method']).size().eq(args.draws).all()
+    assert raw.groupby(['scene','cohort','draw']).method.nunique().eq(len(METHODS)).all()
     assert np.max(np.abs(raw.error-(raw.estimate-raw.truth)))<1e-12
     assert raw[['error','coverage','width','boot_variance']].notna().all().all()
     raw.sort_values(['scene','cohort','draw','method']).to_csv(out/'main_three_method_raw.csv.gz',index=False)
@@ -91,8 +97,8 @@ def main():
     summary=[]
     for (scene,method),v in blocks.groupby(['scene','method']):
         q=student_t.ppf(.975,len(v)-1)
-        d=dict(scene=scene,method=method,cohorts=len(v),draws_per_cohort=20,
-               repetitions=20*len(v),rmse=float(np.sqrt(v.mse.mean())))
+        d=dict(scene=scene,method=method,cohorts=len(v),draws_per_cohort=args.draws,
+               repetitions=args.draws*len(v),rmse=float(np.sqrt(v.mse.mean())))
         for metric in ['mse','bias','coverage','width','boot_variance']:
             est=float(v[metric].mean());se=float(v[metric].std(ddof=1)/np.sqrt(len(v)))
             d.update({metric:est,metric+'_mcse':se,metric+'_lower':est-q*se,metric+'_upper':est+q*se})
@@ -130,26 +136,28 @@ def main():
     ratios=pd.DataFrame(plot_ratios);ratios.to_csv(out/'plot_ratios.csv',index=False)
     summary.to_csv(out/'simulation_summary.csv',index=False)
     pivot=summary.pivot(index='scene',columns='method',values='rmse')
+    rmse_vs_pc1=pivot[BUD]/pivot['PC1-X']
     order=[s for s in SCENES]
     b=summary[summary.method==BUD].set_index('scene')
-    headline=dict(number_scenarios=12,independent_cohorts_per_scenario=args.cohorts,conditional_draws_per_cohort=20,
+    headline=dict(number_scenarios=len(SCENES),independent_cohorts_per_scenario=args.cohorts,conditional_draws_per_cohort=args.draws,
         estimates_three_methods=len(raw),bud_point_wins=int(pivot.idxmin(axis=1).eq(BUD).sum()),
         bud_within_5pct_of_best=int((pivot[BUD]/pivot.min(axis=1)<=1.05).sum()),
         rmse_geometric_ratio_to_srs=float(np.exp(np.log(pivot[BUD]/pivot.SRS).mean())),
-        rmse_geometric_ratio_to_pc1=float(np.exp(np.log(pivot[BUD]/pivot['PC1-X']).mean())),
+        rmse_geometric_ratio_to_pc1=float(np.exp(np.log(rmse_vs_pc1).mean())),
         width_geometric_ratio_to_srs=float(np.exp(np.log(paired[paired.benchmark=='SRS'].ci_width_ratio).mean())),
         coverage_range=[float(b.coverage.min()),float(b.coverage.max())],
         coverage_mean=float(b.coverage.mean()),
         significant_improvements_srs=int(((paired.benchmark=='SRS')&(paired.mse_difference<0)&(paired.p_holm_12<.05)).sum()),
         significant_improvements_pc1=int(((paired.benchmark=='PC1-X')&(paired.mse_difference<0)&(paired.p_holm_12<.05)).sum()),
-        negative_pc1_scene='val_pc1',pc1_friendly_rmse_ratio=float(pivot.loc['val_pc1',BUD]/pivot.loc['val_pc1','PC1-X']),
+        negative_pc1_scene=rmse_vs_pc1.idxmax() if rmse_vs_pc1.max()>1 else None,
+        pc1_friendly_rmse_ratio=float(rmse_vs_pc1.loc['val_pc1']),
         all_draws_retained=True,cluster_unit='complete cohort',ratio_mc_replicates=8000,
         three_method_selection='Current comparison set requested after the broader experiment; historical archive retained.')
     (out/'simulation_headline.json').write_text(json.dumps(headline,indent=2))
     diag=input_csv('diagnostics')
     # Geometry is measured on both arms of each independent cohort.
     dg=diag[diag.variant==BUD].copy()
-    assert len(dg)==12*args.cohorts*2 and (dg.full_after<=dg.full_before+1e-10).all()
+    assert len(dg)==len(SCENES)*args.cohorts*2 and (dg.full_after<=dg.full_before+1e-10).all()
     geometry=dg.groupby('scene',as_index=False).agg(q_initial=('q85','mean'),
         scatter_before=('full_before','mean'),scatter_after=('full_after','mean'),
         event_fraction=('event_fraction','mean'),risk_at_tau=('risk_at_tau','mean'),

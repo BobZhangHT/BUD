@@ -126,11 +126,18 @@ if __name__ == "__main__":
     parser.add_argument("--evaluate", type=Path)
     parser.add_argument("--backend", choices=("c", "python"), default="c")
     parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument("--cohorts", type=int, default=50, help="Independent evaluation cohorts per scenario.")
+    parser.add_argument("--draws", type=int, default=20, help="Phase-II draws per evaluation cohort.")
+    parser.add_argument("--bootstrap-replicates", type=int, default=1000)
     args = parser.parse_args()
     if args.workers < 1:
         parser.error("workers must be positive")
+    if args.cohorts < 1 or args.draws < 1 or args.bootstrap_replicates < 2:
+        parser.error("Evaluation requires positive cohort and draw counts and at least two bootstrap replicates.")
     if not args.plan.exists():
         args.plan.parent.mkdir(parents=True, exist_ok=True)
         plan(args.plan, args.backend, args.workers)
     if args.evaluate:
-        base.evaluate(args.plan, args.evaluate, args.backend, args.workers)
+        base.evaluate(args.plan, args.evaluate, args.backend, args.workers,
+                      cohorts=args.cohorts, draws=args.draws,
+                      bootstrap_replicates=args.bootstrap_replicates)
