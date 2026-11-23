@@ -58,9 +58,3 @@ No application CSVs are shipped. The GBSG and Rotterdam datasets are downloaded 
 | Supplementary Section S12 | `results/budget_refresh/` contains the budget-sensitivity, fixed-grid Weibull, and anchor-sensitivity summaries. Its required historical 120-per-group raw input is isolated at `results/archived_reference/confirmation_120/`. |
 
 The verifier checks selected numerical cells, interval endpoints, scenario sizes, and the source of reported plots. It uses relative tolerance `2e-9` and absolute tolerance `1e-11` for floating-point comparisons. Generated TeX tables are checked after normalizing line endings. Figure PDFs are checked as rendered files since their binary metadata can differ across builds. Raw draws, plots, local data, and compiled libraries are excluded from version control.
-
-## Update with a manuscript revision
-
-Update the analysis and protocol together. Keep prior seeds, settings, and result checks available in their published revision. Use new output directories when the protocol changes, then rebuild the affected tables and figures. Refresh `reference_results.json` from the verified outputs and keep the README commands and output map in sync. [Maintenance instructions](AGENTS.md)
-
-Use GitHub's citation information or cite the accompanying manuscript when using these materials.
