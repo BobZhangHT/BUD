@@ -16,12 +16,11 @@ for name in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS'):
 import hashlib
 import json
 import argparse
-from pathlib import Path
 import time
 import numpy as np
 import pandas as pd
 from scipy.stats import t as student_t, norm
-from designs import make_design, design_variance
+from designs import design_variance
 from refinement import refined_design
 from scenarios import generate
 from survival import draw_sample, km_rmst, km_if, bootstrap_rmst

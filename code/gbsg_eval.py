@@ -1,6 +1,7 @@
-"""Run the prespecified GBSG and MGUS2 small-budget comparison."""
+"""Evaluate prespecified GBSG sampling budgets and validate weighted KM integrals."""
 
-import argparse
+from __future__ import annotations
+
 import hashlib
 import importlib.metadata
 import json
@@ -11,11 +12,11 @@ from urllib.request import urlopen
 
 from real_application import ROOT, build_partitions, seed
 from survival import bootstrap_weights, draw_sample, km_rmst
-from validate_real_application import direct_integral
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+
 
 REVISION = "cc03c29690889dbe83089f5206e2422db8c3f71f"
 BASE_SEED, DRAWS, RESAMPLES, MC_DRAWS = 0x78c404cb, 2000, 499, 4000
@@ -32,6 +33,16 @@ COHORTS = {
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def direct_integral(time, event, weights, tau):
+    """Independently integrate the weighted product-limit survival curve."""
+    survival, area, previous = 1.0, 0.0, 0.0
+    for instant in sorted(set(time[(event == 1) & (time < tau)])):
+        area += survival * (instant - previous)
+        survival *= 1 - weights[(time == instant) & (event == 1)].sum() / weights[time >= instant].sum()
+        previous = instant
+    return area + survival * (tau - previous)
 
 
 def load_cohort(name, spec):
@@ -61,8 +72,7 @@ def load_cohort(name, spec):
         if frame[key].isna().any():
             x[f"{key}_missing"] = frame[key].isna().astype(float)
     for key in spec["categorical"]:
-        indicators = pd.get_dummies(frame[key].astype("string").fillna("missing"), prefix=key, dtype=float)
-        x = x.join(indicators)
+        x = x.join(pd.get_dummies(frame[key].astype("string").fillna("missing"), prefix=key, dtype=float))
     if not np.isfinite(x.to_numpy()).all():
         raise ValueError(f"{name}: invalid covariate frame")
     return frame, x, {"source": url, "sha256": sha(path), "columns": x.columns.tolist()}
@@ -107,20 +117,20 @@ def summarize(raw):
     assert summary.draws.eq(DRAWS).all()
     pairs = []
     for (name, m), subset in metrics.groupby(["cohort", "m"]):
-        w = subset.pivot(index="draw", columns="method", values="squared_error")
+        wide = subset.pivot(index="draw", columns="method", values="squared_error")
         rng = np.random.default_rng(seed(BASE_SEED, name, m, "paired_mc"))
-        ix = rng.integers(0, DRAWS, (MC_DRAWS, DRAWS))
-        bud = w.BUD.to_numpy()
-        boot_bud = bud[ix].mean(axis=1)
+        indices = rng.integers(0, DRAWS, (MC_DRAWS, DRAWS))
+        bud = wide.BUD.to_numpy()
+        boot_bud = bud[indices].mean(axis=1)
         for method in ("SRS", "PC1-X"):
-            other = w[method].to_numpy()
-            reduction = 100 * (1 - np.sqrt(bud.mean()/other.mean()))
-            low, high = np.quantile(100 * (1 - np.sqrt(boot_bud/other[ix].mean(axis=1))), [.025, .975])
+            other = wide[method].to_numpy()
+            reduction = 100 * (1 - np.sqrt(bud.mean() / other.mean()))
+            low, high = np.quantile(100 * (1 - np.sqrt(boot_bud / other[indices].mean(axis=1))), [.025, .975])
             difference = bud - other
-            se = difference.std(ddof=1)/np.sqrt(DRAWS)
+            se = difference.std(ddof=1) / np.sqrt(DRAWS)
             pairs.append(dict(cohort=name, m=m, comparator=method, rmse_reduction_pct=reduction,
-                              mc_low=low, mc_high=high, rmse_reduction=np.sqrt(other.mean())-np.sqrt(bud.mean()),
-                              p_value=2*norm.sf(abs(difference.mean()/se))))
+                              mc_low=low, mc_high=high, rmse_reduction=np.sqrt(other.mean()) - np.sqrt(bud.mean()),
+                              p_value=2 * norm.sf(abs(difference.mean() / se))))
     paired = pd.DataFrame(pairs)
     ordered = paired.p_value.sort_values()
     paired["p_holm"] = (ordered * np.arange(len(ordered), 0, -1)).cummax().clip(upper=1)
@@ -128,9 +138,8 @@ def summarize(raw):
 
 
 def run(out):
-    files = [Path(__file__), ROOT/"code/real_application.py",
-             ROOT/"code/real_core/designs.py", ROOT/"code/real_core/survival.py",
-             ROOT/"code/validate_real_application.py"]
+    files = [Path(__file__), ROOT / "code/real_application.py", ROOT / "code/real_core/designs.py",
+             ROOT / "code/real_core/survival.py"]
     provenance = {
         "seed": BASE_SEED, "draws": DRAWS, "resamples": RESAMPLES, "mc_draws": MC_DRAWS,
         "budgets": BUDGETS, "definitions": COHORTS,
@@ -146,49 +155,49 @@ def run(out):
             cases[name, m] = (frame, designs)
             diagnostics[f"{name}_{m}"] = geometry
             pd.DataFrame({"source_row": frame.source_row, **{k: v[0] for k, v in designs.items()}}).to_csv(
-                out/f"{name}_m{m}_partitions.csv", index=False)
-    (out/"provenance.json").write_text(json.dumps(provenance, indent=2))
-
+                out / f"{name}_m{m}_partitions.csv", index=False)
+    (out / "provenance.json").write_text(json.dumps(provenance, indent=2))
     rows, first = [], []
     for (name, m), (frame, designs) in cases.items():
         spec = COHORTS[name]
-        t, e = frame[spec["time"]].to_numpy(float), frame[spec["event"]].to_numpy(float)
+        time, event = frame[spec["time"]].to_numpy(float), frame[spec["event"]].to_numpy(float)
         tau = spec["tau"]
-        if not np.isfinite(t).all() or (t < 0).any() or not np.isin(e, [0, 1]).all():
+        if not np.isfinite(time).all() or (time < 0).any() or not np.isin(event, [0, 1]).all():
             raise ValueError(f"{name}: invalid survival observations")
-        weights = np.ones(len(t))
-        truth = km_rmst(t, e, weights, tau)
-        direct = direct_integral(t, e, weights, tau)
+        truth = km_rmst(time, event, np.ones(len(time)), tau)
+        direct = direct_integral(time, event, np.ones(len(time)), tau)
         np.testing.assert_allclose(truth, direct, atol=1e-8, rtol=0)
-        run_rows, selections, seconds = evaluate(name, m, frame, t, e, tau, truth, designs)
+        run_rows, selections, seconds = evaluate(name, m, frame, time, event, tau, truth, designs)
         rows.extend(run_rows)
         first.extend(selections)
         diagnostics[f"{name}_{m}"].update(tau=tau, full_rmst=truth, direct_full_rmst=direct,
-                                          full_risk_at_tau=int((t >= tau).sum()),
-                                          full_event_count=int(e.sum()), evaluation_seconds=seconds)
+                                             full_risk_at_tau=int((time >= tau).sum()),
+                                             full_event_count=int(event.sum()), evaluation_seconds=seconds)
         print(f"Complete: {name}, m={m}, {seconds:.1f} seconds", flush=True)
     raw = pd.DataFrame(rows, columns=["cohort", "m", "draw", "method", "estimate", "error", "lower", "upper",
                                       "covered", "width", "risk_at_tau"])
-    assert len(raw) == len(cases)*DRAWS*3 and not raw.duplicated(["cohort", "m", "draw", "method"]).any()
-    raw.to_csv(out/"raw.csv.gz", index=False)
-    raw.loc[raw.draw.eq(0)].to_csv(out/"first_draw_estimates.csv", index=False)
+    assert len(raw) == len(cases) * DRAWS * 3 and not raw.duplicated(["cohort", "m", "draw", "method"]).any()
+    raw.to_csv(out / "raw.csv.gz", index=False)
+    raw.loc[raw.draw.eq(0)].to_csv(out / "first_draw_estimates.csv", index=False)
     pd.DataFrame(first, columns=["cohort", "m", "method", "source_row", "stratum", "weight"]).to_csv(
-        out/"first_draw_selected.csv", index=False)
+        out / "first_draw_selected.csv", index=False)
     summary, paired = summarize(raw)
-    summary.to_csv(out/"summary.csv", index=False)
-    paired.to_csv(out/"paired.csv", index=False)
-    (out/"diagnostics.json").write_text(json.dumps(diagnostics, indent=2))
+    summary.to_csv(out / "summary.csv", index=False)
+    paired.to_csv(out / "paired.csv", index=False)
+    (out / "diagnostics.json").write_text(json.dumps(diagnostics, indent=2))
     print(summary.to_string(index=False))
     print(paired.to_string(index=False))
 
 
 if __name__ == "__main__":
+    import argparse
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=Path("results/small_budgets"))
-    out = ROOT / parser.parse_args().out
-    out.mkdir(parents=True, exist_ok=False)
+    output = ROOT / parser.parse_args().out
+    output.mkdir(parents=True, exist_ok=False)
     try:
-        run(out)
+        run(output)
     except Exception:
-        (out/"failure.txt").write_text(traceback.format_exc())
+        (output / "failure.txt").write_text(traceback.format_exc())
         raise

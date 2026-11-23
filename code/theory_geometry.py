@@ -558,7 +558,7 @@ def discrepancy_experiment(report, checks):
 def protocol():
     root = Path(__file__).resolve().parents[1]
     sources = (
-        "code/theory_check_geometry.py", "code/real_application.py",
+        "code/theory_geometry.py", "code/real_application.py",
         "code/real_core/designs.py", "code/legacy_locked/designs.py",
         "code/legacy_locked/FINAL_METHOD_LOCK.json",
     )

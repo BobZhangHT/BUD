@@ -38,7 +38,7 @@ def _sha256(path: Path) -> str:
 def _import_runner(name: str):
     """Import one archived runner with its own local import roots first."""
     roots = [str(CODE)]
-    if name in {"run_confirmation", "check_fixed_grid_final"}:
+    if name in {"run_confirmation", "fixed_grid"}:
         roots.insert(0, str(LEGACY))
     for root in reversed(roots):
         if root not in sys.path:
@@ -47,18 +47,7 @@ def _import_runner(name: str):
 
 
 def _new_backend(kind: str):
-    try:
-        from km_backend import KMBackend
-    except ImportError as exc:
-        if kind == "c":
-            raise RuntimeError(
-                "The C KM backend is unavailable: code/km_backend.py could not be imported. "
-                "Build/install its kernel first, or explicitly use --backend python."
-            ) from exc
-        raise RuntimeError(
-            "KM backend interface is unavailable. Expected code/km_backend.py "
-            "exporting KMBackend('c'|'python')."
-        ) from exc
+    from backend import KMBackend
     try:
         return KMBackend(kind)
     except Exception as exc:
@@ -76,7 +65,7 @@ def _patch_backend(module: Any, backend: Any, *, bootstrap: bool) -> None:
     if bootstrap:
         module.bootstrap_rmst = backend.bootstrap_rmst
     if backend.name == "c":
-        from design_backend import install
+        from backend import install
         install(module)
 
 
@@ -103,7 +92,7 @@ def _prepare_out(out: Path, command: str, args: argparse.Namespace, backend: Any
     out.mkdir(parents=True)
     metadata = backend.metadata()
     if backend.name == "c":
-        from design_backend import native_metadata
+        from backend import native_metadata
         metadata.update(native_metadata())
     record = {
         "command": command,
@@ -114,8 +103,7 @@ def _prepare_out(out: Path, command: str, args: argparse.Namespace, backend: Any
         "workers": args.workers,
         "source_sha256": {
             path.relative_to(PROJECT).as_posix(): _sha256(path)
-            for path in [Path(__file__), *runner_files, CODE / "km_backend.py",
-                         CODE / "design_backend.py", CODE / "paired_sample_backend.py"]
+            for path in [Path(__file__), *runner_files, CODE / "backend.py"]
             if path.exists()
         },
         "timing": {"started_utc": datetime.now(timezone.utc).isoformat()},
@@ -135,11 +123,15 @@ def _finish_out(out: Path, started: float) -> None:
 
 
 def run_simulation(args: argparse.Namespace, backend: Any, out: Path) -> None:
+    import pandas as pd
+
     runner = _import_runner("run_confirmation")
     spec = dict(cohorts=args.cohorts, draws=args.draws, B=args.bootstrap_replicates,
                 n_group=args.n_group, m_group=args.m_group, workers=args.workers,
                 seed=args.seed, methods=["SRS", "PC1-X", "BUD-fullspace-onepass"],
                 family="all", out=str(out))
+    # Each task draws one complete cohort and evaluates the methods on shared
+    # sampling priorities. Persist completed cohorts with their original IDs.
     tasks = [("new-confirmation", scene, cohort, spec)
              for scene in runner.VALIDATION for cohort in range(args.cohorts)]
     tasks += [("legacy", scene, cohort, spec)
@@ -161,12 +153,10 @@ def run_simulation(args: argparse.Namespace, backend: Any, out: Path) -> None:
             records, diagnostics = future.result()
             all_records.extend(records)
             all_diagnostics.extend(diagnostics)
-            import pandas as pd
             pd.DataFrame(records).to_csv(out / f"raw_{scene}_{cohort:03d}.csv", index=False)
             pd.DataFrame(diagnostics).to_csv(out / f"diag_{scene}_{cohort:03d}.csv", index=False)
             print(f"{number}/{len(tasks)} {family} {scene} cohort={cohort} "
                   f"elapsed={perf_counter() - started:.1f}s", flush=True)
-    import pandas as pd
     raw = pd.DataFrame(all_records).sort_values(["family", "scene", "cohort", "draw", "method"])
     diagnostics = pd.DataFrame(all_diagnostics).sort_values(["family", "scene", "cohort", "group", "variant"])
     raw.to_csv(out / "raw.csv", index=False)
@@ -203,12 +193,12 @@ def run_nwts_flc(args: argparse.Namespace, backend: Any, out: Path) -> None:
 
 
 def run_fixed_grid(args: argparse.Namespace, backend: Any, out: Path) -> None:
-    runner = _import_runner("check_fixed_grid_final")
+    runner = _import_runner("fixed_grid")
     _patch_backend(runner, backend, bootstrap=True)
     runner.COHORTS, runner.DRAWS, runner.B = args.cohorts, args.draws, args.bootstrap_replicates
     saved_argv = sys.argv
     try:
-        sys.argv = [str(CODE / "check_fixed_grid_final.py"), "--out", str(out)]
+        sys.argv = [str(CODE / "fixed_grid.py"), "--out", str(out)]
         runner.main()
     finally:
         sys.argv = saved_argv
@@ -226,7 +216,7 @@ def run_optional_real(args: argparse.Namespace, backend: Any, out: Path) -> None
         runner.REPS, runner.B = args.replicates, args.bootstrap_replicates
         runner.run(out)
         return
-    study = _import_runner("small_budget_application")
+    study = _import_runner("gbsg_eval")
     _patch_real_runtime(study, backend)
     if args.command == "gbsg-mgus2-small":
         study.DRAWS, study.RESAMPLES, study.BUDGETS = args.replicates, args.bootstrap_replicates, (40, 80)
@@ -313,13 +303,13 @@ def main() -> None:
     runner_files = {
         "simulation": [LEGACY / "run_confirmation.py"],
         "nwts-flc": [CODE / "real_application.py"],
-        "fixed-grid": [CODE / "check_fixed_grid_final.py"],
+        "fixed-grid": [CODE / "fixed_grid.py"],
         "rotterdam": [CODE / "rotterdam_application.py"],
-        "gbsg-mgus2-small": [CODE / "small_budget_application.py"],
-        "gbsg-mgus2-medium": [CODE / "small_budget_application.py", CODE / "medium_real_application.py"],
-        "gbsg-planning": [CODE / "small_budget_application.py",
+        "gbsg-mgus2-small": [CODE / "gbsg_eval.py"],
+        "gbsg-mgus2-medium": [CODE / "gbsg_eval.py"],
+        "gbsg-planning": [CODE / "gbsg_eval.py",
                           PROJECT / "results/budget_planning/gbsg_external_calibration.json"],
-        "colon-small": [CODE / "colon_small_budget.py", CODE / "small_budget_application.py"],
+        "colon-small": [CODE / "colon_small_budget.py", CODE / "gbsg_eval.py"],
         "colon-medium": [CODE / "colon_small_budget.py", CODE / "medium_real_application.py"],
     }[args.command]
     out = _prepare_out(args.out, args.command, args, backend, runner_files)

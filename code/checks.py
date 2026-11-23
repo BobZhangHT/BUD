@@ -1,32 +1,124 @@
-"""Verify exact numerical parity between the C and NumPy KM backends."""
+"""Verify paper outputs and numerical agreement between the C and NumPy backends."""
 
 import argparse
+import csv
+from hashlib import sha256
+from importlib.metadata import version
 import json
 import os
-from pathlib import Path
+from math import isclose
 from statistics import median
+from pathlib import Path
+import platform
 import sys
 from time import perf_counter
 
-for name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
-    os.environ[name] = "1"
-
-import numpy as np
-import pandas as pd
-
-from km_backend import KMBackend, reference
 
 ROOT = Path(__file__).resolve().parents[1]
+REFERENCE = ROOT / "reference_results.json"
+# Tight enough to catch a changed draw or reported rounded value, while tolerating
+# harmless floating-point differences between supported compiler/BLAS builds.
+RTOL = 2e-9
+ATOL = 1e-11
+
+
+def extract(root, check):
+    path = root / check["path"]
+    if path.suffix == ".pdf":
+        # PDFs carry build-dependent metadata. Their underlying numerical inputs
+        # are verified separately, so here we check that the output was rendered.
+        with path.open("rb") as file:
+            if file.read(5) != b"%PDF-":
+                raise ValueError(f"Invalid PDF header in {path}")
+        return None
+    if path.suffix == ".tex":
+        return sha256(path.read_text(encoding="utf8").strip().encode("utf8")).hexdigest()
+    if path.suffix == ".csv":
+        with path.open(encoding="utf8", newline="") as file:
+            rows = csv.DictReader(file)
+            return sorted([row[column] for column in check["columns"]] for row in rows
+                          if all(row[key] in values for key, values in check.get("where", {}).items()))
+    values = json.loads(path.read_bytes())
+    selected = []
+    for fields in check["fields"]:
+        value = values
+        for field in fields:
+            value = value[field]
+        # Seeds are represented as hex in the reference so comparison is exact.
+        selected.append(hex(value) if fields == ["seed"] else value)
+    return selected
+
+
+def compare(actual, expected, where):
+    if type(expected) is dict:
+        if type(actual) is not dict or actual.keys() != expected.keys():
+            raise ValueError(f"{where}: changed object keys")
+        for key, reference in expected.items():
+            compare(actual[key], reference, f"{where}.{key}")
+    elif type(expected) is list:
+        if type(actual) is not list or len(actual) != len(expected):
+            raise ValueError(f"{where}: expected {len(expected)} items")
+        for index, (candidate, reference) in enumerate(zip(actual, expected)):
+            compare(candidate, reference, f"{where}[{index}]")
+    elif type(expected) is bool or type(actual) is bool:
+        if actual is not expected:
+            raise ValueError(f"{where}: expected {expected!r}, found {actual!r}")
+    elif actual != expected:
+        # CSV readers return strings. Compare numbers as numbers, but keep
+        # labels, exact booleans, and missing-value markers as literal values.
+        try:
+            if isclose(float(actual), float(expected), rel_tol=RTOL, abs_tol=ATOL):
+                return
+        except (TypeError, ValueError):
+            pass
+        raise ValueError(f"{where}: expected {expected!r}, found {actual!r}")
+
+
+def verify(target, outputs):
+    reference = json.loads(REFERENCE.read_bytes(), parse_constant=lambda value: value)
+    targets = reference if target == "all" else {target: reference[target]}
+    failures = []
+    for name, checks in targets.items():
+        for check in checks:
+            try:
+                compare(extract(outputs, check), check.get("expected"), check["path"])
+            except (OSError, KeyError, ValueError) as error:
+                failures.append(f"{name}: {error}")
+        print(f"{name}: checked {len(checks)} output files")
+    if failures:
+        raise SystemExit("Verification failed:\n" + "\n".join(failures))
+    print("All selected paper outputs matched the reference.")
+
+
+def doctor(backend):
+    from bud_experiment import _new_backend
+
+    print(f"Python {platform.python_version()} | {platform.platform()}", flush=True)
+    for package in ("numpy", "scipy", "pandas", "scikit-learn", "matplotlib"):
+        print(f"{package} {version(package)}", flush=True)
+    configuration = _new_backend(backend).metadata()
+    if backend == "c":
+        from backend import native_metadata
+        configuration.update(native_metadata())
+    print(json.dumps(configuration, indent=2))
+
+
+# Numerical kernels and optional performance checks
+
 TIMING_COLUMNS = {"seconds", "mean_seconds", "total_seconds", "evaluation_seconds", "seconds_design_per_arm",
                   "pca_seconds", "pc1_total_seconds", "bud_total_seconds"}
 
 
 def bit_equal(left, right):
+    import numpy as np
+
     a, b = np.asarray(left, dtype=np.float64), np.asarray(right, dtype=np.float64)
     np.testing.assert_array_equal(a.view(np.uint64), b.view(np.uint64))
 
 
 def check_kernel(py, c):
+    import numpy as np
+
     rng = np.random.default_rng(227303)
     cases = 400
     for i in range(cases):
@@ -68,6 +160,8 @@ def check_kernel(py, c):
 
 
 def benchmark_kernel(py, c):
+    import numpy as np
+
     rng = np.random.default_rng(673425)
     summary = []
     for tie in (False, True):
@@ -89,6 +183,8 @@ def benchmark_kernel(py, c):
 
 
 def compare_results(paths):
+    import pandas as pd
+
     left, right = [Path(x) for x in paths]
     matched = []
     candidates = ("raw", "real_raw", "main_three_methods", "diagnostics", "cohort_metrics",
@@ -128,7 +224,9 @@ def compare_results(paths):
 
 def benchmark_design():
     """Time uncached designs and verify the exact selected lattice and anchors."""
-    from design_backend import DesignBackend, native_metadata
+    import numpy as np
+
+    from backend import DesignBackend, native_metadata
 
     sys.path.insert(0, str(ROOT / "code/legacy_locked"))
     from designs import glp_uniform_design, inverse_quantile_anchors
@@ -170,13 +268,12 @@ def benchmark_design():
                 cold_glp_timings=timings)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--compare", nargs=2, metavar=("PYTHON_RESULTS", "C_RESULTS"))
-    parser.add_argument("--benchmark", action="store_true")
-    parser.add_argument("--design-benchmark", action="store_true")
-    parser.add_argument("--report", type=Path)
-    args = parser.parse_args()
+def parity(args):
+    """Check edge cases and optionally time kernels or compare two raw runs."""
+    for name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+        os.environ[name] = "1"
+    from backend import KMBackend
+
     py, c = KMBackend("python"), KMBackend()
     report = dict(kernel_cases=check_kernel(py, c), kernel_max_absolute_error=0.0, backend=c.metadata())
     if args.benchmark:
@@ -186,8 +283,30 @@ def main():
     if args.compare:
         report["result_tables"] = compare_results(args.compare)
     if args.report:
-        args.report.write_text(json.dumps(report, indent=2)+"\n")
+        args.report.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    modes = parser.add_subparsers(dest="mode", required=True)
+    env = modes.add_parser("doctor", help="Check dependencies and load the selected backend")
+    env.add_argument("--backend", choices=("c", "python"), required=True)
+    paper = modes.add_parser("verify", help="Match outputs against the numerical reference")
+    paper.add_argument("--target", choices=("all", "simulation", "gbsg", "supplement"), required=True)
+    paper.add_argument("--outputs", type=Path, required=True)
+    kernels = modes.add_parser("parity", help="Check numerical agreement of the two backends")
+    kernels.add_argument("--compare", nargs=2, metavar=("PYTHON_RESULTS", "C_RESULTS"))
+    kernels.add_argument("--benchmark", action="store_true")
+    kernels.add_argument("--design-benchmark", action="store_true")
+    kernels.add_argument("--report", type=Path)
+    args = parser.parse_args()
+    if args.mode == "parity":
+        parity(args)
+    elif args.mode == "doctor":
+        doctor(args.backend)
+    else:
+        verify(args.target, args.outputs)
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def _grid(budgets: tuple[int, ...], replicates: int, bootstrap_replicates: int,
     # import.  It is intentionally not imported by the root dispatcher.
     import bud_experiment as engine
 
-    study = engine._import_runner("small_budget_application")
+    study = engine._import_runner("gbsg_eval")
     selected_backend = engine._new_backend(backend)
     engine._patch_real_runtime(study, selected_backend)
     args = argparse.Namespace(
@@ -105,7 +105,7 @@ def _grid_cli(args: argparse.Namespace) -> None:
 def _subprocess_grid(budgets: tuple[int, ...], replicates: int, bootstrap_replicates: int,
                      backend: str, out: Path) -> tuple[str, ...]:
     return (
-        str(CODE / "reproduce_gbsg.py"), "grid", "--backend", backend,
+        str(CODE / "gbsg.py"), "grid", "--backend", backend,
         "--replicates", str(replicates), "--bootstrap-replicates", str(bootstrap_replicates),
         "--out", str(out), "--budgets", *(str(value) for value in budgets),
     )
@@ -144,8 +144,8 @@ def run(backend: str, workers: int, quick: bool) -> None:
         for future in futures:
             future.result()
 
-    _command(str(CODE / "gbsg_bud_only_budget.py"), "plan")
-    _command(str(CODE / "gbsg_bud_only_budget.py"), "evaluate", "--backend", backend)
+    _command(str(CODE / "gbsg_plan.py"), "bud-plan")
+    _command(str(CODE / "gbsg_plan.py"), "bud-evaluate", "--backend", backend)
 
 
 def main() -> None:

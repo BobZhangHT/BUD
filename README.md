@@ -21,20 +21,28 @@ python reproduce.py smoke
 python reproduce.py run --workers 8
 ```
 
-The default backend compiles the included C sources with GCC or Clang and caches the shared libraries in the system temporary directory. Set `BUD_CC` to a specific compiler executable if needed. The Python reference backend is available with `--backend python`. The S11 checks use their original NumPy/SciPy implementations with either option. The `doctor` command reports the environment and native kernel status. Run `python code/validate_km_backends.py --design-benchmark` for additional C and Python parity checks.
+The default backend compiles the included C sources with GCC or Clang and caches the shared libraries in the system temporary directory. Set `BUD_CC` to a specific compiler executable if needed. The Python reference backend is available with `--backend python`. The S11 checks use their original NumPy/SciPy implementations with either option. The `doctor` command reports the environment and native kernel status. Run `python code/checks.py parity --design-benchmark` to compare the two backends.
 
-The smoke profile uses reduced replication counts and writes to `smoke_results/`. The main full simulation evaluates all 12 settings at 120 per group and the independently planned 242 per group using 1,000 independent complete cohorts per setting, one phase-II draw per cohort, and 1,000 bootstrap resamples per draw; its fixed evaluation seed is 33891027. Experimental stages run in separate processes to preserve their original design imports, random-number streams, and source provenance. Use a fresh checkout for a repeat run with a different backend. For a selectable workload, add `--target simulation`, `--target gbsg`, or `--target supplement`. The supplement creates a separately labelled archived 50-by-20 120-per-group reference run only when needed for S12. Each full target checks its available protocol and numerical targets against `reference_results.json`. To repeat the checks without rerunning the experiments, use `python reproduce.py verify`.
+The smoke profile uses reduced replication counts and writes to `smoke_results/`. The full main simulation evaluates 12 settings at 120 and 242 records per group. Each setting uses 1,000 independent complete cohorts, one phase-II draw per cohort, and 1,000 bootstrap replicates per draw. The independent planning stage selects 242, and the evaluation uses seed 33891027. Experimental stages run in separate processes to preserve their design imports and random-number streams. Use a fresh checkout to repeat a full run with a different backend.
 
-The anchor sensitivity stage generates 12,000 cohorts and can take substantially longer than the other supplement checks. It saves completed chunks as it runs. To resume that stage alone with the same backend, use `python code/refresh_secondary.py anchors --root results/budget_refresh --workers 8`, then run `python reproduce.py verify --target supplement`.
+Use `--target simulation`, `--target gbsg`, or `--target supplement` to run a single target. The supplement generates the earlier 50-cohort, 20-draw reference run when needed for S12. Each full target checks its protocol and numerical outputs against `reference_results.json`. To verify existing outputs, use `python reproduce.py verify`.
+
+The anchor sensitivity study generates 12,000 cohorts and saves completed batches. To resume it with the same backend, run `python code/supplement.py anchors --root results/budget_refresh --workers 8`, followed by `python reproduce.py verify --target supplement`.
 
 ## Data and code
 
 No application CSVs are shipped. The GBSG and Rotterdam datasets are downloaded from a pinned Rdatasets revision and checked against their SHA-256 digests. Download and check both separately with `python reproduce.py data`. The runner accepts cached files with the same digests in `data/`. GBSG supplies the application cohort. The node-positive subset of Rotterdam supplies the external pilot inputs for BUD's size rule. [GBSG source documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/gbsg.html) · [Rotterdam source documentation](https://stat.ethz.ch/R-manual/R-devel/library/survival/html/rotterdam.html)
 
-- `reproduce.py` is the main entry point. The three `code/reproduce_*.py` drivers specify the stage order and output locations.
-- `code/native/` contains the C kernels for weighted KM, good-lattice-point design operations, and paired sampling. The adjacent Python backend modules adapt these kernels to the original analysis.
-- `code/legacy_locked/` contains the locked simulation generators, designs, and survival routines. The real-data runners retain their original `code/real_core/` import paths for source provenance.
-- `reference_results.json` contains compact numerical targets from the archived manuscript runs. It is used for comparison after computation.
+`reproduce.py` runs the three targets and verifies their outputs against `reference_results.json`.
+
+| Where to look | What it does |
+| --- | --- |
+| `code/simulation.py` | Runs the main simulations. `sim_budget.py` selects review budgets, and `sim_results.py` builds the summaries, tables, and figure. |
+| `code/gbsg.py` | Downloads the pinned datasets and runs the GBSG study. `gbsg_plan.py` handles planning, and `gbsg_eval.py` evaluates the sampling designs. |
+| `code/supplement.py` | Runs the theory and sensitivity studies and resumes the anchor study. |
+| `code/backend.py` and `code/native/` | Provide the C kernels and NumPy reference paths for weighted KM, lattice design operations, and paired sampling. |
+| `code/checks.py` | Checks the environment, verifies the paper results, and compares the numerical backends. |
+| `code/legacy_locked/` and `code/real_core/` | Preserve the executed simulation and real-data routines used by the runners. |
 
 ## Outputs
 
@@ -50,6 +58,6 @@ The verifier checks selected numerical cells, interval endpoints, scenario sizes
 
 ## Update with a manuscript revision
 
-Update the affected analysis and documented protocol together. Keep published seeds and setups available under their release tag, and use new result directories when a protocol changes. Rebuild every affected table and figure from fresh inputs. The independent-cohort protocol checks are already listed in `reference_results.json`; after the full runs finish, add the new numerical checks for `paper_120` and `paper_242` summary, paired-evidence, ratio, headline, and TeX-table outputs, plus the two-budget figure. Do not alter the archived 50-by-20 canonical checkpoints. Keep README commands and the paper-to-output map synchronized. See [maintenance instructions](AGENTS.md).
+Update the analysis and protocol together. Keep prior seeds, settings, and result checks available in their published revision. Use new output directories when the protocol changes, then rebuild the affected tables and figures. Refresh `reference_results.json` from the verified outputs and keep the README commands and output map in sync. [Maintenance instructions](AGENTS.md)
 
 Use GitHub's citation information or cite the accompanying manuscript when using these materials.

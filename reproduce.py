@@ -46,20 +46,20 @@ def main():
         parser.error("Python 3.12 or later is required. Use the versions in requirements.txt.")
 
     if args.command == "doctor":
-        call("verify_results", "doctor", "--backend", args.backend)
+        call("checks", "doctor", "--backend", args.backend)
     elif args.command == "verify":
-        call("verify_results", "verify", "--target", args.target, "--outputs", args.outputs.resolve())
+        call("checks", "verify", "--target", args.target, "--outputs", args.outputs.resolve())
     elif args.command == "data":
-        call("reproduce_gbsg", "--data-only")
+        call("gbsg", "--data-only")
     else:
         if args.workers < 1:
             parser.error("--workers must be at least 1")
         targets = TARGETS if args.target == "all" else (args.target,)
         for target in targets:
             options = ["--quick"] if args.command == "smoke" else []
-            call(f"reproduce_{target}", "--backend", args.backend, "--workers", args.workers, *options)
+            call(target, "--backend", args.backend, "--workers", args.workers, *options)
         if args.command == "run":
-            call("verify_results", "verify", "--target", args.target, "--outputs", ROOT)
+            call("checks", "verify", "--target", args.target, "--outputs", ROOT)
 
 
 if __name__ == "__main__":
