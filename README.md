@@ -42,7 +42,10 @@ No application CSVs are shipped. The GBSG and Rotterdam datasets are downloaded 
 | `code/supplement.py` | Runs the theory and sensitivity studies and resumes the anchor study. |
 | `code/backend.py` and `code/native/` | Provide the C kernels and NumPy reference paths for weighted KM, lattice design operations, and paired sampling. |
 | `code/checks.py` | Checks the environment, verifies the paper results, and compares the numerical backends. |
-| `code/legacy_locked/` and `code/real_core/` | Preserve the executed simulation and real-data routines used by the runners. |
+| `code/legacy_locked/` | Supplies the scenario generators, locked BUD design, and KM–RMST bootstrap used by the simulation and supplement. |
+| `code/real_core/` | Supplies the design and survival routines used by the GBSG evaluation. |
+
+`code/legacy_locked/FINAL_METHOD_LOCK.json` records the original method lock and source checksums. The current simulation sizes and replication counts are set in `code/simulation.py` and documented above.
 
 ## Outputs
 
